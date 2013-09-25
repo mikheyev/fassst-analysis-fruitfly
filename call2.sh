@@ -16,14 +16,20 @@ ref=../../ref/dmel.fa
 alias GA="java -Xmx"$MAXMEM"g -Djava.io.tmpdir=/genefs/MikheyevU/temp -jar /apps/MikheyevU/sasha/GATK/GenomeAnalysisTK.jar"
 alias picard="java -Xmx"$MAXMEM"g -Djava.io.tmpdir=/genefs/MikheyevU/temp -jar /apps/MikheyevU/picard-tools-1.66/"
 
-#GA -nct 6\
-#    -T HaplotypeCaller\
-#    -R $ref \
-#    -A QualByDepth -A RMSMappingQuality -A FisherStrand -A HaplotypeScore -A InbreedingCoeff -A MappingQualityRankSumTest -A Coverage -A ReadPosRankSumTest -A BaseQualityRankSumTest -A ClippingRankSumTest \
-#    -I data/merged.recal.bam \
-#    --genotyping_mode DISCOVERY \
-#    --heterozygosity 0.005 \
-#    -o data/raw.vcf
+# Calling annotations 
+
+GA -nct 6\
+   -T HaplotypeCaller\
+   -R $ref \
+   -A QualByDepth -A RMSMappingQuality -A FisherStrand -A HaplotypeScore -A InbreedingCoeff -A MappingQualityRankSumTest -A Coverage -A ReadPosRankSumTest -A BaseQualityRankSumTest -A ClippingRankSumTest \
+   -I data/merged.recal.bam \
+   --genotyping_mode DISCOVERY \
+   --heterozygosity 0.005 \
+   -o data/raw.vcf
+
+
+# Variant Quality Score Recalibration (VQSR). Takes known SNP sites and uses them to filter GATK's quality scores by quality.
+# This step uses R and can be memory-intensive, hence the increased memory requirement for this job.
 
 GA \
    -T VariantRecalibrator \
@@ -36,6 +42,9 @@ GA \
    -recalFile data/output.recal \
    -tranchesFile data/output.tranches \
    -rscriptFile data/plots.R
+
+# Apply VQSR to the data, producing a VCF marked as PASSED for sites that are OK.
+# In this case we use at 90% false discovery rate, which is pretty conservative, but this parameter can be tuned
 
 GA \
   -T ApplyRecalibration \
